@@ -1,0 +1,17 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Timeline from '../Timeline.astro';
+import { timeline } from '../../data/timeline';
+import { useTranslations } from '../../i18n/utils';
+import type { Lang } from '../../i18n/ui';
+
+const { lang } = Astro.props as { lang: Lang };
+const t = useTranslations(lang);
+const entries = timeline[lang];
+---
+
+<BaseLayout title={t('timeline.title')}>
+  <h1>{t('timeline.title')}</h1>
+  <p class="post-excerpt">{t('timeline.intro')}</p>
+  <Timeline entries={entries} />
+</BaseLayout>

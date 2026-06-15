@@ -1,0 +1,132 @@
+---
+import type { TimelineEntry } from '../data/timeline';
+
+interface Props {
+  entries: TimelineEntry[];
+}
+const { entries } = Astro.props;
+
+function isImage(logo?: string): boolean {
+  return !!logo && (logo.startsWith('/') || logo.startsWith('http'));
+}
+---
+
+<div class="timeline">
+  {
+    entries.map((e) => (
+      <div class="tl-row">
+        <div class="tl-date">
+          <span>{e.start}</span>
+          {e.end && <span class="tl-date-end">– {e.end}</span>}
+        </div>
+        <div class="tl-rail">
+          <span class="tl-dot" />
+        </div>
+        <div class="tl-content">
+          {e.logo &&
+            (isImage(e.logo) ? (
+              <img class="tl-logo" src={e.logo} alt={e.logoAlt ?? ''} />
+            ) : (
+              <span class="tl-logo tl-logo-emoji">{e.logo}</span>
+            ))}
+          <div class="tl-body" set:html={e.bodyHtml} />
+        </div>
+      </div>
+    ))
+  }
+</div>
+
+<style>
+  .timeline {
+    margin: 1.5rem 0;
+  }
+  .tl-row {
+    display: flex;
+    gap: 1rem;
+    align-items: stretch;
+  }
+  .tl-date {
+    flex-shrink: 0;
+    width: 56px;
+    text-align: right;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    line-height: 1.4;
+    padding-top: 0.15rem;
+    display: flex;
+    flex-direction: column;
+  }
+  .tl-date-end {
+    /* 结束年份单独一行 */
+  }
+  /* 竖线:用 rail 列的左边框,跨行连续 */
+  .tl-rail {
+    position: relative;
+    flex-shrink: 0;
+    width: 2px;
+    background: var(--border);
+    align-self: stretch;
+  }
+  .tl-dot {
+    position: absolute;
+    top: 0.45rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    border: 2px solid var(--bg);
+  }
+  .tl-content {
+    flex: 1;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    padding-bottom: 2rem; /* 行间距;由 rail 的竖线覆盖,保持连续 */
+  }
+  .tl-row:last-child .tl-content {
+    padding-bottom: 0.5rem;
+  }
+  .tl-logo {
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    object-fit: contain;
+  }
+  .tl-logo-emoji {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+  }
+  .tl-body {
+    flex: 1;
+    padding-top: 0.1rem;
+  }
+  .tl-body :global(p) {
+    margin: 0 0 0.6rem;
+  }
+  .tl-body :global(p:last-child) {
+    margin-bottom: 0;
+  }
+
+  @media (max-width: 520px) {
+    .tl-date {
+      width: 42px;
+      font-size: 0.78rem;
+    }
+    .tl-logo,
+    .tl-logo-emoji {
+      width: 40px;
+      height: 40px;
+      font-size: 1.4rem;
+    }
+    .tl-content {
+      gap: 0.6rem;
+    }
+  }
+</style>
