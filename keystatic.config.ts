@@ -1,12 +1,11 @@
 import { config, fields, collection } from '@keystatic/core';
 
-// 本地模式:直接读写仓库内 Markdown,适合本地写作与开发验证。
-// 上线在线后台时改为:
-//   storage: { kind: 'github', repo: 'your-name/tianyou-blog' }
-// 并按 README 创建 Keystatic GitHub App。
+// GitHub 在线模式:在部署好的网站 /keystatic 登录 GitHub 后即可在线写作,
+// 保存自动提交到仓库并触发重新部署。首次需在 /keystatic 按向导创建 GitHub App。
 export default config({
   storage: {
-    kind: 'local',
+    kind: 'github',
+    repo: 'tianyouskr/tianyou-blog',
   },
   collections: {
     posts: collection({
