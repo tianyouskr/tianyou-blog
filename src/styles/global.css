@@ -41,6 +41,10 @@ body {
   line-height: 1.75;
   -webkit-font-smoothing: antialiased;
   transition: background 0.2s ease, color 0.2s ease;
+  /* sticky footer:撑满视口,main 占据剩余高度 */
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
 .container {
@@ -158,7 +162,7 @@ td {
 
 main {
   padding: 2rem 0 3rem;
-  min-height: 60vh;
+  flex: 1 0 auto;
 }
 
 .site-footer {
