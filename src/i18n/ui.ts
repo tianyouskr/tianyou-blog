@@ -9,7 +9,7 @@ export const defaultLang: Lang = 'zh';
 // 界面文案字典
 export const ui = {
   zh: {
-    'site.title': '田有的博客',
+    'site.title': 'tianyou的blog',
     'site.description': '记录技术、思考与生活',
     'nav.home': '首页',
     'nav.archive': '归档',
