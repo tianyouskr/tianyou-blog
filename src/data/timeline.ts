@@ -20,48 +20,50 @@ export interface TimelineEntry {
   bodyHtml: string;
 }
 
-// 在这里填你自己的经历(从新到旧排列即可)。下面是示例,按需替换/增删。
+// 经历(从新到旧排列)。增删条目直接改这个数组即可。
 export const timeline: Record<Lang, TimelineEntry[]> = {
   zh: [
     {
-      start: '2024',
-      logo: '💻',
+      start: '2026.5',
+      logo: '💼',
       bodyHtml:
-        '在 <a href="#">某公司</a> 担任软件工程师,负责……(把这里换成你的真实经历)。',
+        '在 <a href="https://www.bytedance.com" target="_blank" rel="noopener">字节跳动</a> 实习,从事 AI Agent 相关方向的研发。',
     },
     {
-      start: '2020',
-      end: '2024',
+      start: '2025',
+      end: '2027',
       logo: '🎓',
       bodyHtml:
-        '在 <a href="#">某大学</a> 攻读计算机科学学位,研究方向是……。',
+        '在 <a href="https://www.whu.edu.cn" target="_blank" rel="noopener">武汉大学</a> 计算机学院攻读计算机技术专业硕士。',
     },
     {
-      start: '2016',
-      end: '2020',
+      start: '2021',
+      end: '2025',
       logo: '🏫',
-      bodyHtml: '高中阶段开始接触编程,第一次写出了……。',
+      bodyHtml:
+        '在 <a href="https://www.whu.edu.cn" target="_blank" rel="noopener">武汉大学</a> 计算机学院人工智能学院攻读本科。',
     },
   ],
   en: [
     {
-      start: '2024',
-      logo: '💻',
+      start: '2026.5',
+      logo: '💼',
       bodyHtml:
-        'Software engineer at <a href="#">some company</a>, working on … (replace with your real experience).',
+        'Intern at <a href="https://www.bytedance.com" target="_blank" rel="noopener">ByteDance</a>, working on AI agents.',
     },
     {
-      start: '2020',
-      end: '2024',
+      start: '2025',
+      end: '2027',
       logo: '🎓',
       bodyHtml:
-        'Studied Computer Science at <a href="#">some university</a>, focused on ….',
+        "M.E. in Computer Technology at the School of Computer Science, <a href=\"https://www.whu.edu.cn/en\" target=\"_blank\" rel=\"noopener\">Wuhan University</a>.",
     },
     {
-      start: '2016',
-      end: '2020',
+      start: '2021',
+      end: '2025',
       logo: '🏫',
-      bodyHtml: 'Got into programming in high school; wrote my first ….',
+      bodyHtml:
+        'B.Eng at the School of Artificial Intelligence (School of Computer Science), <a href="https://www.whu.edu.cn/en" target="_blank" rel="noopener">Wuhan University</a>.',
     },
   ],
 };
