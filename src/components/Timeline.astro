@@ -88,17 +88,24 @@ function isImage(logo?: string): boolean {
   .tl-row:last-child .tl-content {
     padding-bottom: 0.5rem;
   }
+  /* 图片 logo:固定高度,宽度自适应(适配横版文字标/校徽) */
   .tl-logo {
     flex-shrink: 0;
-    width: 52px;
-    height: 52px;
-    border-radius: 12px;
+    height: 42px;
+    width: auto;
+    max-width: 120px;
     object-fit: contain;
+    object-position: left center;
+    margin-top: 0.1rem;
   }
+  /* emoji logo:正方形圆角块 */
   .tl-logo-emoji {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
     font-size: 1.8rem;
     background: var(--bg-subtle);
     border: 1px solid var(--border);
@@ -119,7 +126,10 @@ function isImage(logo?: string): boolean {
       width: 42px;
       font-size: 0.78rem;
     }
-    .tl-logo,
+    .tl-logo {
+      height: 34px;
+      max-width: 92px;
+    }
     .tl-logo-emoji {
       width: 40px;
       height: 40px;

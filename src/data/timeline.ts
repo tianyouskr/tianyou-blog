@@ -25,21 +25,24 @@ export const timeline: Record<Lang, TimelineEntry[]> = {
   zh: [
     {
       start: '2026.5',
-      logo: '💼',
+      logo: '/logos/bytedance.svg',
+      logoAlt: '字节跳动',
       bodyHtml:
         '在 <a href="https://www.bytedance.com" target="_blank" rel="noopener">字节跳动</a> 实习,从事 AI Agent 相关方向的研发。',
     },
     {
       start: '2025',
       end: '2027',
-      logo: '🎓',
+      logo: '/logos/whu.png',
+      logoAlt: '武汉大学',
       bodyHtml:
         '在 <a href="https://www.whu.edu.cn" target="_blank" rel="noopener">武汉大学</a> 计算机学院攻读计算机技术专业硕士。',
     },
     {
       start: '2021',
       end: '2025',
-      logo: '🏫',
+      logo: '/logos/whu.png',
+      logoAlt: '武汉大学',
       bodyHtml:
         '在 <a href="https://www.whu.edu.cn" target="_blank" rel="noopener">武汉大学</a> 计算机学院人工智能学院攻读本科。',
     },
@@ -47,21 +50,24 @@ export const timeline: Record<Lang, TimelineEntry[]> = {
   en: [
     {
       start: '2026.5',
-      logo: '💼',
+      logo: '/logos/bytedance.svg',
+      logoAlt: 'ByteDance',
       bodyHtml:
         'Intern at <a href="https://www.bytedance.com" target="_blank" rel="noopener">ByteDance</a>, working on AI agents.',
     },
     {
       start: '2025',
       end: '2027',
-      logo: '🎓',
+      logo: '/logos/whu.png',
+      logoAlt: 'Wuhan University',
       bodyHtml:
         "M.E. in Computer Technology at the School of Computer Science, <a href=\"https://www.whu.edu.cn/en\" target=\"_blank\" rel=\"noopener\">Wuhan University</a>.",
     },
     {
       start: '2021',
       end: '2025',
-      logo: '🏫',
+      logo: '/logos/whu.png',
+      logoAlt: 'Wuhan University',
       bodyHtml:
         'B.Eng at the School of Artificial Intelligence (School of Computer Science), <a href="https://www.whu.edu.cn/en" target="_blank" rel="noopener">Wuhan University</a>.',
     },
