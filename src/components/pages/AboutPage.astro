@@ -1,0 +1,24 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { useTranslations } from '../../i18n/utils';
+import type { Lang } from '../../i18n/ui';
+
+const { lang } = Astro.props as { lang: Lang };
+const t = useTranslations(lang);
+---
+
+<BaseLayout title={t('about.title')}>
+  <h1>{t('about.title')}</h1>
+  {
+    lang === 'zh' ? (
+      <p>
+        你好,我是田有。这里记录我的技术笔记、阅读与思考。欢迎通过 RSS 订阅,或在文章下留言交流。
+      </p>
+    ) : (
+      <p>
+        Hi, I'm Tianyou. This is where I keep notes on technology, reading, and ideas. Feel
+        free to subscribe via RSS or leave a comment.
+      </p>
+    )
+  }
+</BaseLayout>

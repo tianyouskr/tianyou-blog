@@ -1,0 +1,47 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getPosts } from '../../lib/posts';
+import { useTranslations, localizedPath, postSlug } from '../../i18n/utils';
+import type { Lang } from '../../i18n/ui';
+
+const { lang } = Astro.props as { lang: Lang };
+const t = useTranslations(lang);
+const posts = await getPosts(lang);
+
+// 按年份分组
+const byYear = new Map<number, typeof posts>();
+for (const p of posts) {
+  const y = p.data.pubDate.getFullYear();
+  if (!byYear.has(y)) byYear.set(y, []);
+  byYear.get(y)!.push(p);
+}
+const years = [...byYear.keys()].sort((a, b) => b - a);
+---
+
+<BaseLayout title={t('archive.title')}>
+  <h1>{t('archive.title')}</h1>
+  {
+    years.map((year) => (
+      <section>
+        <h2>{year}</h2>
+        <ul>
+          {byYear.get(year)!.map((post) => (
+            <li>
+              <a href={localizedPath(`/posts/${postSlug(post.id)}`, lang)}>
+                {post.data.title}
+              </a>
+              <span class="post-meta">
+                {' '}
+                ·{' '}
+                {post.data.pubDate.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                })}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))
+  }
+</BaseLayout>

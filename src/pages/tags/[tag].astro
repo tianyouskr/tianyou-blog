@@ -1,0 +1,24 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostCard from '../../components/PostCard.astro';
+import { getPosts, getTags } from '../../lib/posts';
+import { useTranslations } from '../../i18n/utils';
+
+export async function getStaticPaths() {
+  const tags = await getTags('zh');
+  const posts = await getPosts('zh');
+  return [...tags.keys()].map((tag) => ({
+    params: { tag },
+    props: { tag, posts: posts.filter((p) => p.data.tags.includes(tag)) },
+  }));
+}
+
+const { tag, posts } = Astro.props;
+const t = useTranslations('zh');
+---
+
+<BaseLayout title={`#${tag}`}>
+  <h1>#{tag}</h1>
+  <p class="post-meta">{posts.length} {t('tags.postsTagged')} #{tag}</p>
+  {posts.map((post) => <PostCard post={post} lang="zh" />)}
+</BaseLayout>

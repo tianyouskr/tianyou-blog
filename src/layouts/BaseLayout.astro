@@ -1,0 +1,78 @@
+---
+import '../styles/global.css';
+import ThemeToggle from '../components/ThemeToggle.astro';
+import LangSwitch from '../components/LangSwitch.astro';
+import { getLangFromUrl, useTranslations, localizedPath } from '../i18n/utils';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const { title, description } = Astro.props;
+const pageTitle = title ? `${title} · ${t('site.title')}` : t('site.title');
+const pageDesc = description ?? t('site.description');
+const nav = [
+  { href: localizedPath('/', lang), label: t('nav.home') },
+  { href: localizedPath('/archive', lang), label: t('nav.archive') },
+  { href: localizedPath('/tags', lang), label: t('nav.tags') },
+  { href: localizedPath('/search', lang), label: t('nav.search') },
+  { href: localizedPath('/about', lang), label: t('nav.about') },
+];
+---
+
+<!doctype html>
+<html lang={lang === 'zh' ? 'zh-CN' : 'en'}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={pageDesc} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title={t('site.title')}
+      href={new URL('rss.xml', Astro.site)}
+    />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={pageDesc} />
+    <meta property="og:type" content="website" />
+    {/* 无闪烁主题:在 body 渲染前确定 data-theme */}
+    <script is:inline>
+      (function () {
+        const saved = localStorage.getItem('theme');
+        const theme =
+          saved ||
+          (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+      })();
+    </script>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container">
+        <nav>
+          <a class="brand" href={localizedPath('/', lang)}>{t('site.title')}</a>
+          {nav.slice(1).map((item) => <a href={item.href}>{item.label}</a>)}
+          <LangSwitch />
+          <ThemeToggle />
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <div class="container">
+        <slot />
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        © {new Date().getFullYear()} {t('site.title')} · {t('footer.builtWith')}
+      </div>
+    </footer>
+  </body>
+</html>

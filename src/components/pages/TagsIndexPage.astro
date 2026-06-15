@@ -1,0 +1,24 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getTags } from '../../lib/posts';
+import { useTranslations, localizedPath } from '../../i18n/utils';
+import type { Lang } from '../../i18n/ui';
+
+const { lang } = Astro.props as { lang: Lang };
+const t = useTranslations(lang);
+const tags = [...(await getTags(lang)).entries()].sort((a, b) => b[1] - a[1]);
+---
+
+<BaseLayout title={t('tags.title')}>
+  <h1>{t('tags.title')}</h1>
+  <div>
+    {
+      tags.map(([tag, count]) => (
+        <a class="tag-pill" href={localizedPath(`/tags/${tag}`, lang)}>
+          #{tag} ({count})
+        </a>
+      ))
+    }
+    {tags.length === 0 && <p class="post-excerpt">No tags yet.</p>}
+  </div>
+</BaseLayout>

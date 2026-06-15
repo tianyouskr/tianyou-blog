@@ -1,0 +1,29 @@
+---
+// Pagefind 静态搜索 UI。索引在 `npm run build` 后由 pagefind 生成到 dist/pagefind。
+// 注意:dev 模式下无索引,需 build + preview 才能搜索到结果。
+---
+
+<div id="search"></div>
+
+<link href="/pagefind/pagefind-ui.css" rel="stylesheet" />
+<script src="/pagefind/pagefind-ui.js" is:inline></script>
+<script is:inline>
+  window.addEventListener('DOMContentLoaded', () => {
+    if (typeof PagefindUI === 'undefined') {
+      document.getElementById('search').innerHTML =
+        '<p style="color:var(--text-muted)">搜索索引尚未生成,请先运行 <code>npm run build</code> 再 <code>npm run preview</code>。</p>';
+      return;
+    }
+    new PagefindUI({ element: '#search', showSubResults: true, showImages: false });
+  });
+</script>
+
+<style is:global>
+  #search .pagefind-ui {
+    --pagefind-ui-primary: var(--link);
+    --pagefind-ui-text: var(--text);
+    --pagefind-ui-background: var(--bg);
+    --pagefind-ui-border: var(--border);
+    --pagefind-ui-font: var(--font-sans);
+  }
+</style>

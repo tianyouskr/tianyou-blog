@@ -1,0 +1,18 @@
+# build output
+dist/
+.astro/
+
+# dependencies
+node_modules/
+
+# cloudflare / wrangler
+.wrangler/
+.dev.vars
+
+# env
+.env
+.env.production
+
+# logs / os
+*.log
+.DS_Store

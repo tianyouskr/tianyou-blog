@@ -1,0 +1,24 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import PostCard from '../../../components/PostCard.astro';
+import { getPosts, getTags } from '../../../lib/posts';
+import { useTranslations } from '../../../i18n/utils';
+
+export async function getStaticPaths() {
+  const tags = await getTags('en');
+  const posts = await getPosts('en');
+  return [...tags.keys()].map((tag) => ({
+    params: { tag },
+    props: { tag, posts: posts.filter((p) => p.data.tags.includes(tag)) },
+  }));
+}
+
+const { tag, posts } = Astro.props;
+const t = useTranslations('en');
+---
+
+<BaseLayout title={`#${tag}`}>
+  <h1>#{tag}</h1>
+  <p class="post-meta">{posts.length} {t('tags.postsTagged')} #{tag}</p>
+  {posts.map((post) => <PostCard post={post} lang="en" />)}
+</BaseLayout>

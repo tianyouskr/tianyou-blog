@@ -1,0 +1,20 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostCard from '../PostCard.astro';
+import { getPosts } from '../../lib/posts';
+import { useTranslations } from '../../i18n/utils';
+import type { Lang } from '../../i18n/ui';
+
+const { lang } = Astro.props as { lang: Lang };
+const t = useTranslations(lang);
+const posts = await getPosts(lang);
+---
+
+<BaseLayout>
+  <h1>{t('site.title')}</h1>
+  <p class="post-excerpt">{t('site.description')}</p>
+  <div>
+    {posts.map((post) => <PostCard post={post} lang={lang} />)}
+    {posts.length === 0 && <p class="post-excerpt">No posts yet.</p>}
+  </div>
+</BaseLayout>

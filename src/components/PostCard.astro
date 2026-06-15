@@ -1,0 +1,26 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { localizedPath, postSlug } from '../i18n/utils';
+import type { Lang } from '../i18n/ui';
+
+interface Props {
+  post: CollectionEntry<'posts'>;
+  lang: Lang;
+}
+const { post, lang } = Astro.props;
+const href = localizedPath(`/posts/${postSlug(post.id)}`, lang);
+const date = post.data.pubDate.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+});
+---
+
+<article class="post-card">
+  <h2><a href={href}>{post.data.title}</a></h2>
+  <div class="post-meta">
+    <time datetime={post.data.pubDate.toISOString()}>{date}</time>
+    {post.data.tags.length > 0 && <span> · {post.data.tags.join(', ')}</span>}
+  </div>
+  {post.data.description && <p class="post-excerpt">{post.data.description}</p>}
+</article>

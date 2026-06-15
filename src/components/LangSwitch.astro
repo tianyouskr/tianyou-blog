@@ -1,0 +1,29 @@
+---
+import { getLangFromUrl } from '../i18n/utils';
+const lang = getLangFromUrl(Astro.url);
+const path = Astro.url.pathname;
+
+// 在中/英根路径间切换:去掉或加上 /en 前缀
+function toLang(target: 'zh' | 'en'): string {
+  const stripped = path.replace(/^\/en(?=\/|$)/, '') || '/';
+  return target === 'en' ? `/en${stripped === '/' ? '' : stripped}` : stripped;
+}
+---
+
+<a href={toLang(lang === 'zh' ? 'en' : 'zh')} class="lang-switch">
+  {lang === 'zh' ? 'EN' : '中'}
+</a>
+
+<style>
+  .lang-switch {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text);
+  }
+  .lang-switch:hover {
+    color: var(--link);
+    text-decoration: none;
+  }
+</style>

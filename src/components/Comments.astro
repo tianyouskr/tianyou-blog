@@ -1,0 +1,66 @@
+---
+// Giscus 评论 —— 部署前请到 https://giscus.app 生成配置并替换下列占位值
+// 需在 GitHub 仓库开启 Discussions 并安装 giscus app
+const repo = import.meta.env.PUBLIC_GISCUS_REPO ?? 'your-name/tianyou-blog';
+const repoId = import.meta.env.PUBLIC_GISCUS_REPO_ID ?? '';
+const category = import.meta.env.PUBLIC_GISCUS_CATEGORY ?? 'Announcements';
+const categoryId = import.meta.env.PUBLIC_GISCUS_CATEGORY_ID ?? '';
+const lang = Astro.props.lang === 'en' ? 'en' : 'zh-CN';
+---
+
+<section class="comments">
+  <div
+    id="giscus-container"
+    data-repo={repo}
+    data-repo-id={repoId}
+    data-category={category}
+    data-category-id={categoryId}
+    data-lang={lang}
+  >
+  </div>
+</section>
+
+<script>
+  function currentTheme() {
+    return document.documentElement.getAttribute('data-theme') === 'dark'
+      ? 'dark'
+      : 'light';
+  }
+
+  function loadGiscus() {
+    const el = document.getElementById('giscus-container');
+    if (!el || el.dataset.loaded) return;
+    if (!el.dataset.repoId || !el.dataset.categoryId) {
+      el.innerHTML =
+        '<p style="color:var(--text-muted);font-size:0.9rem">评论未配置:请在 .env 中填入 Giscus 参数(见 README)。</p>';
+      return;
+    }
+    el.dataset.loaded = 'true';
+    const s = document.createElement('script');
+    s.src = 'https://giscus.app/client.js';
+    s.async = true;
+    s.crossOrigin = 'anonymous';
+    s.setAttribute('data-repo', el.dataset.repo!);
+    s.setAttribute('data-repo-id', el.dataset.repoId!);
+    s.setAttribute('data-category', el.dataset.category!);
+    s.setAttribute('data-category-id', el.dataset.categoryId!);
+    s.setAttribute('data-mapping', 'pathname');
+    s.setAttribute('data-reactions-enabled', '1');
+    s.setAttribute('data-emit-metadata', '0');
+    s.setAttribute('data-input-position', 'top');
+    s.setAttribute('data-theme', currentTheme());
+    s.setAttribute('data-lang', el.dataset.lang!);
+    el.appendChild(s);
+  }
+
+  function setGiscusTheme(theme: string) {
+    const iframe = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
+    iframe?.contentWindow?.postMessage(
+      { giscus: { setConfig: { theme } } },
+      'https://giscus.app'
+    );
+  }
+
+  loadGiscus();
+  window.addEventListener('theme-change', (e) => setGiscusTheme((e as CustomEvent).detail));
+</script>
