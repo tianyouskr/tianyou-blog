@@ -7,7 +7,7 @@ import cloudflare from '@astrojs/cloudflare';
 import keystatic from '@keystatic/astro';
 
 // 站点地址 —— 部署后改成你的真实域名
-export const SITE = 'https://tianyou-blog.n1345983204.workers.dev';
+export const SITE = 'https://tianyou-blog.tianyouskr.workers.dev';
 
 // https://astro.build/config
 export default defineConfig({
