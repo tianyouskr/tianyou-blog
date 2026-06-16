@@ -1,10 +1,10 @@
 ---
-// Giscus 评论 —— 部署前请到 https://giscus.app 生成配置并替换下列占位值
-// 需在 GitHub 仓库开启 Discussions 并安装 giscus app
-const repo = import.meta.env.PUBLIC_GISCUS_REPO ?? 'your-name/tianyou-blog';
-const repoId = import.meta.env.PUBLIC_GISCUS_REPO_ID ?? '';
+// Giscus 评论配置(值来自 https://giscus.app;repo-id/category-id 非密钥,可直接入库)
+// 如需更换仓库,改下面四个值即可;也支持用 PUBLIC_GISCUS_* 环境变量覆盖。
+const repo = import.meta.env.PUBLIC_GISCUS_REPO ?? 'tianyouskr/tianyou-blog';
+const repoId = import.meta.env.PUBLIC_GISCUS_REPO_ID ?? 'R_kgDOS67kKQ';
 const category = import.meta.env.PUBLIC_GISCUS_CATEGORY ?? 'Announcements';
-const categoryId = import.meta.env.PUBLIC_GISCUS_CATEGORY_ID ?? '';
+const categoryId = import.meta.env.PUBLIC_GISCUS_CATEGORY_ID ?? 'DIC_kwDOS67kKc4C_PNF';
 const lang = Astro.props.lang === 'en' ? 'en' : 'zh-CN';
 ---
 
