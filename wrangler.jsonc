@@ -8,6 +8,13 @@
     "binding": "ASSETS",
     "directory": "./dist"
   },
+  // 私密每日记录存储(仅登录后读写,不公开)
+  "kv_namespaces": [
+    {
+      "binding": "PRIVATE_LOGS",
+      "id": "acd65a0b49d147c598d4f55318d8ff89"
+    }
+  ],
   "observability": {
     "enabled": true
   }
