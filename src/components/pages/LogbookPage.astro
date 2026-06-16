@@ -8,37 +8,32 @@ const { lang } = Astro.props as { lang: Lang };
 const t = useTranslations(lang);
 const logs = await getLogs();
 
-// 传给客户端脚本的本地化文案与配置
-const cfg = {
-  lang,
-  weekdays:
-    lang === 'zh'
-      ? ['一', '二', '三', '四', '五', '六', '日']
-      : ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
-  monthLabel: (y: number, m: number) =>
-    lang === 'zh' ? `${y}年${m + 1}月` : `${y}-${String(m + 1).padStart(2, '0')}`,
-  keystaticPath: '/keystatic',
-  i18n: {
-    weight: t('logs.weight'),
-    workout: t('logs.workout'),
-    noData: t('logs.noData'),
-    edit: t('logs.edit'),
-    trend: t('logs.trend'),
-    trendEmpty: t('logs.trendEmpty'),
-    privateToggle: t('logs.privateToggle'),
-    privateHint: t('logs.privateHint'),
-    today: t('logs.today'),
-  },
+const i18n = {
+  weight: t('logs.weight'),
+  workout: t('logs.workout'),
+  noData: t('logs.noData'),
+  edit: t('logs.edit'),
+  trend: t('logs.trend'),
+  trendEmpty: t('logs.trendEmpty'),
+  privateToggle: t('logs.privateToggle'),
+  privateHint: t('logs.privateHint'),
+  login: t('logs.login'),
+  logout: t('logs.logout'),
+  loginPrompt: t('logs.loginPrompt'),
+  authedAs: t('logs.authedAs'),
+  saving: t('logs.saving'),
 };
+const weekdays =
+  lang === 'zh'
+    ? ['一', '二', '三', '四', '五', '六', '日']
+    : ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 
 // 安全嵌入 JSON(避免 </script> 截断)
 const logsJson = JSON.stringify(logs).replace(/</g, '\\u003c');
-const cfgJson = JSON.stringify({
-  lang: cfg.lang,
-  weekdays: cfg.weekdays,
-  keystaticPath: cfg.keystaticPath,
-  i18n: cfg.i18n,
-}).replace(/</g, '\\u003c');
+const cfgJson = JSON.stringify({ lang, weekdays, keystaticPath: '/keystatic', i18n }).replace(
+  /</g,
+  '\\u003c'
+);
 ---
 
 <BaseLayout title={t('logs.title')}>
@@ -64,12 +59,7 @@ const cfgJson = JSON.stringify({
       <div id="lb-chart"></div>
     </section>
 
-    <div class="lb-backup">
-      <span class="lb-lock">🔒 {t('logs.private')}</span>
-      <button class="lb-text-btn" id="lb-export">{t('logs.export')}</button>
-      <button class="lb-text-btn" id="lb-import">{t('logs.import')}</button>
-      <input type="file" id="lb-import-file" accept="application/json" hidden />
-    </div>
+    <div class="lb-auth" id="lb-auth"></div>
   </div>
 
   <script id="logs-data" type="application/json" set:html={logsJson}></script>
@@ -94,18 +84,42 @@ const cfgJson = JSON.stringify({
       const byDate: Record<string, { date: string; weight?: number; workout: string }> = {};
       logs.forEach((l) => (byDate[l.date] = l));
 
-      // ---- 私密数据:仅存本机 localStorage ----
-      const LS_KEY = 'tianyou-blog:private-logs';
-      const loadPrivate = (): Record<string, { sex?: boolean }> => {
+      // ---- 私密数据:服务端(GitHub 登录后)----
+      let authed = false;
+      let me = '';
+      let priv: Record<string, { sex?: boolean }> = {};
+
+      async function loadPrivate() {
         try {
-          return JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+          const res = await fetch('/api/private', { headers: { Accept: 'application/json' } });
+          if (res.status === 401) {
+            authed = false;
+            priv = {};
+          } else if (res.ok) {
+            const data = await res.json();
+            authed = !!data.authed;
+            me = data.login || '';
+            priv = data.data || {};
+          }
         } catch {
-          return {};
+          authed = false;
         }
-      };
-      const savePrivate = (p: Record<string, { sex?: boolean }>) =>
-        localStorage.setItem(LS_KEY, JSON.stringify(p));
-      let priv = loadPrivate();
+        renderAuth();
+        renderCalendar();
+      }
+
+      async function setPrivate(date: string, sex: boolean) {
+        const res = await fetch('/api/private', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ date, sex }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          priv = data.data || {};
+        }
+        renderCalendar();
+      }
 
       const pad = (n: number) => String(n).padStart(2, '0');
       const keyOf = (y: number, m: number, d: number) => `${y}-${pad(m + 1)}-${pad(d)}`;
@@ -120,21 +134,30 @@ const cfgJson = JSON.stringify({
 
       const $ = (id: string) => document.getElementById(id) as HTMLElement;
 
-      // 星期表头
-      const wkEl = $('lb-weekdays');
-      wkEl.innerHTML = cfg.weekdays.map((w) => `<span>${w}</span>`).join('');
+      $('lb-weekdays').innerHTML = cfg.weekdays.map((w) => `<span>${w}</span>`).join('');
+
+      function renderAuth() {
+        const el = $('lb-auth');
+        if (authed) {
+          el.innerHTML = `<span class="lb-lock">🔒 ${T.authedAs}${me ? ' · ' + me : ''}</span>
+            <a class="lb-text-btn" href="/api/auth/logout">${T.logout}</a>`;
+        } else {
+          el.innerHTML = `<span class="lb-lock">🔒 ${T.loginPrompt}</span>
+            <a class="lb-text-btn" href="/api/auth/login">${T.login}</a>`;
+        }
+      }
 
       function renderCalendar() {
         $('lb-month').textContent = monthLabel(viewY, viewM);
         const first = new Date(viewY, viewM, 1);
-        const lead = (first.getDay() + 6) % 7; // 周一为起点
+        const lead = (first.getDay() + 6) % 7;
         const days = new Date(viewY, viewM + 1, 0).getDate();
         let html = '';
         for (let i = 0; i < lead; i++) html += '<div class="lb-cell lb-empty"></div>';
         for (let d = 1; d <= days; d++) {
           const k = keyOf(viewY, viewM, d);
           const log = byDate[k];
-          const hasPriv = !!priv[k]?.sex;
+          const hasPriv = authed && !!priv[k]?.sex;
           const cls = [
             'lb-cell',
             log ? 'lb-has' : '',
@@ -148,7 +171,7 @@ const cfgJson = JSON.stringify({
               ? `<span class="lb-w">${log.weight}</span>`
               : '';
           const gym = log && log.workout ? '<span class="lb-gym">🏋️</span>' : '';
-          const lock = hasPriv ? '<span class="lb-priv" title="private">•</span>' : '';
+          const lock = hasPriv ? '<span class="lb-priv">•</span>' : '';
           html += `<button class="${cls}" data-date="${k}"><span class="lb-d">${d}</span>${w}${gym}${lock}</button>`;
         }
         $('lb-grid').innerHTML = html;
@@ -159,10 +182,17 @@ const cfgJson = JSON.stringify({
           );
       }
 
+      function escapeHtml(s: string) {
+        return s
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/\n/g, '<br>');
+      }
+
       function openDetail(k: string) {
         selected = k;
         const log = byDate[k];
-        const checked = !!priv[k]?.sex;
         const body =
           log && (typeof log.weight === 'number' || log.workout)
             ? `${
@@ -175,34 +205,27 @@ const cfgJson = JSON.stringify({
                   : ''
               }`
             : `<div class="lb-nodata">${T.noData} · <a href="${cfg.keystaticPath}">${T.edit}</a></div>`;
-        $('lb-detail').innerHTML = `
-          <div class="lb-detail-head">${k}</div>
-          ${body}
-          <label class="lb-priv-row">
-            <input type="checkbox" id="lb-priv-check" ${checked ? 'checked' : ''} />
-            <span>🔒 ${T.privateToggle}</span>
-          </label>
-          <div class="lb-priv-hint">${T.privateHint}</div>
-        `;
-        $('lb-detail').hidden = false;
-        const chk = document.getElementById('lb-priv-check') as HTMLInputElement;
-        chk.addEventListener('change', () => {
-          if (chk.checked) priv[k] = { ...(priv[k] || {}), sex: true };
-          else {
-            delete priv[k];
-          }
-          savePrivate(priv);
-          renderCalendar();
-        });
-        renderCalendar();
-      }
 
-      function escapeHtml(s: string) {
-        return s
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/\n/g, '<br>');
+        // 私密部分:仅登录后显示
+        const privSection = authed
+          ? `<label class="lb-priv-row">
+               <input type="checkbox" id="lb-priv-check" ${priv[k]?.sex ? 'checked' : ''} />
+               <span>🔒 ${T.privateToggle}</span>
+             </label>
+             <div class="lb-priv-hint">${T.privateHint}</div>`
+          : `<div class="lb-priv-hint">🔒 ${T.loginPrompt} <a href="/api/auth/login">${T.login}</a></div>`;
+
+        $('lb-detail').innerHTML = `<div class="lb-detail-head">${k}</div>${body}${privSection}`;
+        $('lb-detail').hidden = false;
+
+        if (authed) {
+          const chk = document.getElementById('lb-priv-check') as HTMLInputElement;
+          chk.addEventListener('change', () => {
+            chk.disabled = true;
+            setPrivate(k, chk.checked).finally(() => (chk.disabled = false));
+          });
+        }
+        renderCalendar();
       }
 
       // ---- 体重趋势图(纯 SVG) ----
@@ -243,7 +266,7 @@ const cfgJson = JSON.stringify({
           </svg>`;
       }
 
-      // ---- 导航 + 备份 ----
+      // ---- 导航 ----
       $('lb-prev').addEventListener('click', () => {
         viewM--;
         if (viewM < 0) {
@@ -266,36 +289,10 @@ const cfgJson = JSON.stringify({
         renderCalendar();
       });
 
-      $('lb-export').addEventListener('click', () => {
-        const blob = new Blob([JSON.stringify(priv, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'private-logs-backup.json';
-        a.click();
-        URL.revokeObjectURL(url);
-      });
-      const fileInput = document.getElementById('lb-import-file') as HTMLInputElement;
-      $('lb-import').addEventListener('click', () => fileInput.click());
-      fileInput.addEventListener('change', () => {
-        const f = fileInput.files?.[0];
-        if (!f) return;
-        const reader = new FileReader();
-        reader.onload = () => {
-          try {
-            const data = JSON.parse(String(reader.result));
-            priv = { ...priv, ...data };
-            savePrivate(priv);
-            renderCalendar();
-          } catch {
-            /* ignore invalid file */
-          }
-        };
-        reader.readAsText(f);
-      });
-
+      renderAuth();
       renderCalendar();
       renderChart();
+      loadPrivate();
     }
   </script>
 </BaseLayout>
@@ -460,7 +457,7 @@ const cfgJson = JSON.stringify({
     font-size: 12px;
     font-weight: 700;
   }
-  .lb-backup {
+  .lb-auth {
     display: flex;
     align-items: center;
     gap: 0.6rem;
