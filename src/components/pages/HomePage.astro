@@ -1,20 +1,40 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PostCard from '../PostCard.astro';
+import Timeline from '../Timeline.astro';
 import { getPosts } from '../../lib/posts';
+import { timeline } from '../../data/timeline';
 import { useTranslations } from '../../i18n/utils';
 import type { Lang } from '../../i18n/ui';
 
 const { lang } = Astro.props as { lang: Lang };
 const t = useTranslations(lang);
 const posts = await getPosts(lang);
+const entries = timeline[lang];
 ---
 
 <BaseLayout>
-  <h1>{t('site.title')}</h1>
-  <p class="post-excerpt">{t('site.description')}</p>
-  <div>
-    {posts.map((post) => <PostCard post={post} lang={lang} />)}
-    {posts.length === 0 && <p class="post-excerpt">No posts yet.</p>}
-  </div>
+  <header class="home-intro">
+    <h1>{t('site.title')}</h1>
+    <p class="post-excerpt">{t('site.description')}</p>
+  </header>
+
+  <section>
+    <h2>{t('timeline.title')}</h2>
+    <Timeline entries={entries} />
+  </section>
+
+  <section>
+    <h2>{t('archive.title')}</h2>
+    <div>
+      {posts.map((post) => <PostCard post={post} lang={lang} />)}
+      {posts.length === 0 && <p class="post-excerpt">No posts yet.</p>}
+    </div>
+  </section>
 </BaseLayout>
+
+<style>
+  .home-intro {
+    margin-bottom: 1rem;
+  }
+</style>
