@@ -14,13 +14,8 @@ const entries = timeline[lang];
 ---
 
 <BaseLayout>
-  <header class="home-intro">
-    <h1>{t('site.title')}</h1>
-    <p class="post-excerpt">{t('site.description')}</p>
-  </header>
-
   <section>
-    <h2>{t('timeline.title')}</h2>
+    <h1>{t('timeline.title')}</h1>
     <Timeline entries={entries} />
   </section>
 
@@ -32,9 +27,3 @@ const entries = timeline[lang];
     </div>
   </section>
 </BaseLayout>
-
-<style>
-  .home-intro {
-    margin-bottom: 1rem;
-  }
-</style>
