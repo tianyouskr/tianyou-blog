@@ -297,7 +297,8 @@ const cfgJson = JSON.stringify({ lang, weekdays, keystaticPath: '/keystatic', i1
   </script>
 </BaseLayout>
 
-<style>
+<!-- 全局样式:日历格子等元素由 JS 动态生成,作用域样式无法命中,故用 is:global -->
+<style is:global>
   .lb-controls {
     display: flex;
     align-items: center;
