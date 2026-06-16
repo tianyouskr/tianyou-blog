@@ -1,0 +1,485 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getLogs } from '../../lib/logs';
+import { useTranslations } from '../../i18n/utils';
+import type { Lang } from '../../i18n/ui';
+
+const { lang } = Astro.props as { lang: Lang };
+const t = useTranslations(lang);
+const logs = await getLogs();
+
+// 传给客户端脚本的本地化文案与配置
+const cfg = {
+  lang,
+  weekdays:
+    lang === 'zh'
+      ? ['一', '二', '三', '四', '五', '六', '日']
+      : ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
+  monthLabel: (y: number, m: number) =>
+    lang === 'zh' ? `${y}年${m + 1}月` : `${y}-${String(m + 1).padStart(2, '0')}`,
+  keystaticPath: '/keystatic',
+  i18n: {
+    weight: t('logs.weight'),
+    workout: t('logs.workout'),
+    noData: t('logs.noData'),
+    edit: t('logs.edit'),
+    trend: t('logs.trend'),
+    trendEmpty: t('logs.trendEmpty'),
+    privateToggle: t('logs.privateToggle'),
+    privateHint: t('logs.privateHint'),
+    today: t('logs.today'),
+  },
+};
+
+// 安全嵌入 JSON(避免 </script> 截断)
+const logsJson = JSON.stringify(logs).replace(/</g, '\\u003c');
+const cfgJson = JSON.stringify({
+  lang: cfg.lang,
+  weekdays: cfg.weekdays,
+  keystaticPath: cfg.keystaticPath,
+  i18n: cfg.i18n,
+}).replace(/</g, '\\u003c');
+---
+
+<BaseLayout title={t('logs.title')}>
+  <h1>{t('logs.title')}</h1>
+  <p class="post-excerpt">{t('logs.intro')}</p>
+
+  <div id="logbook" data-lang={lang}>
+    <div class="lb-controls">
+      <button class="icon-btn" id="lb-prev" aria-label={t('logs.prevMonth')}>‹</button>
+      <strong id="lb-month" class="lb-month"></strong>
+      <button class="icon-btn" id="lb-next" aria-label={t('logs.nextMonth')}>›</button>
+      <button class="lb-text-btn" id="lb-today">{t('logs.today')}</button>
+      <a class="lb-text-btn lb-edit" href="/keystatic">{t('logs.edit')}</a>
+    </div>
+
+    <div class="lb-weekdays" id="lb-weekdays"></div>
+    <div class="lb-grid" id="lb-grid"></div>
+
+    <div class="lb-detail" id="lb-detail" hidden></div>
+
+    <section class="lb-trend">
+      <h2>{t('logs.trend')}</h2>
+      <div id="lb-chart"></div>
+    </section>
+
+    <div class="lb-backup">
+      <span class="lb-lock">🔒 {t('logs.private')}</span>
+      <button class="lb-text-btn" id="lb-export">{t('logs.export')}</button>
+      <button class="lb-text-btn" id="lb-import">{t('logs.import')}</button>
+      <input type="file" id="lb-import-file" accept="application/json" hidden />
+    </div>
+  </div>
+
+  <script id="logs-data" type="application/json" set:html={logsJson}></script>
+  <script id="logs-cfg" type="application/json" set:html={cfgJson}></script>
+
+  <script>
+    const root = document.getElementById('logbook');
+    if (root) {
+      const logs = JSON.parse(
+        (document.getElementById('logs-data') as HTMLElement).textContent || '[]'
+      ) as Array<{ date: string; weight?: number; workout: string }>;
+      const cfg = JSON.parse(
+        (document.getElementById('logs-cfg') as HTMLElement).textContent || '{}'
+      ) as {
+        lang: string;
+        weekdays: string[];
+        keystaticPath: string;
+        i18n: Record<string, string>;
+      };
+      const T = cfg.i18n;
+
+      const byDate: Record<string, { date: string; weight?: number; workout: string }> = {};
+      logs.forEach((l) => (byDate[l.date] = l));
+
+      // ---- 私密数据:仅存本机 localStorage ----
+      const LS_KEY = 'tianyou-blog:private-logs';
+      const loadPrivate = (): Record<string, { sex?: boolean }> => {
+        try {
+          return JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+        } catch {
+          return {};
+        }
+      };
+      const savePrivate = (p: Record<string, { sex?: boolean }>) =>
+        localStorage.setItem(LS_KEY, JSON.stringify(p));
+      let priv = loadPrivate();
+
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const keyOf = (y: number, m: number, d: number) => `${y}-${pad(m + 1)}-${pad(d)}`;
+      const monthLabel = (y: number, m: number) =>
+        cfg.lang === 'zh' ? `${y}年${m + 1}月` : `${y}-${pad(m + 1)}`;
+
+      const now = new Date();
+      const todayKey = keyOf(now.getFullYear(), now.getMonth(), now.getDate());
+      let viewY = now.getFullYear();
+      let viewM = now.getMonth();
+      let selected: string | null = null;
+
+      const $ = (id: string) => document.getElementById(id) as HTMLElement;
+
+      // 星期表头
+      const wkEl = $('lb-weekdays');
+      wkEl.innerHTML = cfg.weekdays.map((w) => `<span>${w}</span>`).join('');
+
+      function renderCalendar() {
+        $('lb-month').textContent = monthLabel(viewY, viewM);
+        const first = new Date(viewY, viewM, 1);
+        const lead = (first.getDay() + 6) % 7; // 周一为起点
+        const days = new Date(viewY, viewM + 1, 0).getDate();
+        let html = '';
+        for (let i = 0; i < lead; i++) html += '<div class="lb-cell lb-empty"></div>';
+        for (let d = 1; d <= days; d++) {
+          const k = keyOf(viewY, viewM, d);
+          const log = byDate[k];
+          const hasPriv = !!priv[k]?.sex;
+          const cls = [
+            'lb-cell',
+            log ? 'lb-has' : '',
+            k === todayKey ? 'lb-today' : '',
+            k === selected ? 'lb-sel' : '',
+          ]
+            .filter(Boolean)
+            .join(' ');
+          const w =
+            log && typeof log.weight === 'number'
+              ? `<span class="lb-w">${log.weight}</span>`
+              : '';
+          const gym = log && log.workout ? '<span class="lb-gym">🏋️</span>' : '';
+          const lock = hasPriv ? '<span class="lb-priv" title="private">•</span>' : '';
+          html += `<button class="${cls}" data-date="${k}"><span class="lb-d">${d}</span>${w}${gym}${lock}</button>`;
+        }
+        $('lb-grid').innerHTML = html;
+        $('lb-grid')
+          .querySelectorAll<HTMLElement>('.lb-cell[data-date]')
+          .forEach((el) =>
+            el.addEventListener('click', () => openDetail(el.dataset.date as string))
+          );
+      }
+
+      function openDetail(k: string) {
+        selected = k;
+        const log = byDate[k];
+        const checked = !!priv[k]?.sex;
+        const body =
+          log && (typeof log.weight === 'number' || log.workout)
+            ? `${
+                typeof log.weight === 'number'
+                  ? `<div><span class="lb-k">${T.weight}</span> <strong>${log.weight}</strong> kg</div>`
+                  : ''
+              }${
+                log.workout
+                  ? `<div><span class="lb-k">${T.workout}</span> ${escapeHtml(log.workout)}</div>`
+                  : ''
+              }`
+            : `<div class="lb-nodata">${T.noData} · <a href="${cfg.keystaticPath}">${T.edit}</a></div>`;
+        $('lb-detail').innerHTML = `
+          <div class="lb-detail-head">${k}</div>
+          ${body}
+          <label class="lb-priv-row">
+            <input type="checkbox" id="lb-priv-check" ${checked ? 'checked' : ''} />
+            <span>🔒 ${T.privateToggle}</span>
+          </label>
+          <div class="lb-priv-hint">${T.privateHint}</div>
+        `;
+        $('lb-detail').hidden = false;
+        const chk = document.getElementById('lb-priv-check') as HTMLInputElement;
+        chk.addEventListener('change', () => {
+          if (chk.checked) priv[k] = { ...(priv[k] || {}), sex: true };
+          else {
+            delete priv[k];
+          }
+          savePrivate(priv);
+          renderCalendar();
+        });
+        renderCalendar();
+      }
+
+      function escapeHtml(s: string) {
+        return s
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/\n/g, '<br>');
+      }
+
+      // ---- 体重趋势图(纯 SVG) ----
+      function renderChart() {
+        const pts = logs
+          .filter((l) => typeof l.weight === 'number')
+          .map((l) => ({ date: l.date, w: l.weight as number }));
+        const host = $('lb-chart');
+        if (pts.length < 2) {
+          host.innerHTML = `<p class="post-excerpt">${T.trendEmpty}</p>`;
+          return;
+        }
+        const W = 720;
+        const H = 200;
+        const padX = 44;
+        const padY = 24;
+        const ws = pts.map((p) => p.w);
+        const min = Math.min(...ws);
+        const max = Math.max(...ws);
+        const span = max - min || 1;
+        const x = (i: number) => padX + (i * (W - padX - 12)) / (pts.length - 1);
+        const y = (w: number) => padY + (1 - (w - min) / span) * (H - padY * 2);
+        const line = pts.map((p, i) => `${x(i)},${y(p.w)}`).join(' ');
+        const dots = pts
+          .map((p, i) => `<circle cx="${x(i)}" cy="${y(p.w)}" r="2.5" />`)
+          .join('');
+        const last = pts[pts.length - 1];
+        host.innerHTML = `
+          <svg viewBox="0 0 ${W} ${H}" class="lb-svg" role="img" aria-label="${T.trend}">
+            <line x1="${padX}" y1="${padY}" x2="${padX}" y2="${H - padY}" class="lb-axis" />
+            <text x="${padX - 6}" y="${y(max) + 4}" class="lb-ylab" text-anchor="end">${max}</text>
+            <text x="${padX - 6}" y="${y(min) + 4}" class="lb-ylab" text-anchor="end">${min}</text>
+            <polyline points="${line}" class="lb-poly" fill="none" />
+            ${dots}
+            <text x="${x(0)}" y="${H - 6}" class="lb-xlab">${pts[0].date.slice(5)}</text>
+            <text x="${x(pts.length - 1)}" y="${H - 6}" class="lb-xlab" text-anchor="end">${last.date.slice(5)}</text>
+            <text x="${x(pts.length - 1)}" y="${y(last.w) - 8}" class="lb-llab" text-anchor="end">${last.w}</text>
+          </svg>`;
+      }
+
+      // ---- 导航 + 备份 ----
+      $('lb-prev').addEventListener('click', () => {
+        viewM--;
+        if (viewM < 0) {
+          viewM = 11;
+          viewY--;
+        }
+        renderCalendar();
+      });
+      $('lb-next').addEventListener('click', () => {
+        viewM++;
+        if (viewM > 11) {
+          viewM = 0;
+          viewY++;
+        }
+        renderCalendar();
+      });
+      $('lb-today').addEventListener('click', () => {
+        viewY = now.getFullYear();
+        viewM = now.getMonth();
+        renderCalendar();
+      });
+
+      $('lb-export').addEventListener('click', () => {
+        const blob = new Blob([JSON.stringify(priv, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'private-logs-backup.json';
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+      const fileInput = document.getElementById('lb-import-file') as HTMLInputElement;
+      $('lb-import').addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', () => {
+        const f = fileInput.files?.[0];
+        if (!f) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const data = JSON.parse(String(reader.result));
+            priv = { ...priv, ...data };
+            savePrivate(priv);
+            renderCalendar();
+          } catch {
+            /* ignore invalid file */
+          }
+        };
+        reader.readAsText(f);
+      });
+
+      renderCalendar();
+      renderChart();
+    }
+  </script>
+</BaseLayout>
+
+<style>
+  .lb-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 1.5rem 0 1rem;
+    flex-wrap: wrap;
+  }
+  .lb-month {
+    font-size: 1.1rem;
+    min-width: 6.5rem;
+    text-align: center;
+  }
+  .lb-text-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    border-radius: 6px;
+    padding: 0.25rem 0.7rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .lb-text-btn:hover {
+    background: var(--bg-subtle);
+    text-decoration: none;
+  }
+  .lb-edit {
+    margin-left: auto;
+  }
+  .lb-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+  .lb-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .lb-cell {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    padding: 0.2rem;
+    font: inherit;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease;
+  }
+  .lb-cell.lb-empty {
+    border: none;
+    background: none;
+    cursor: default;
+  }
+  .lb-cell:not(.lb-empty):hover {
+    background: var(--bg-subtle);
+  }
+  .lb-cell.lb-has {
+    border-color: var(--link);
+  }
+  .lb-cell.lb-today {
+    box-shadow: inset 0 0 0 2px var(--link);
+  }
+  .lb-cell.lb-sel {
+    background: var(--bg-subtle);
+  }
+  .lb-d {
+    position: absolute;
+    top: 3px;
+    left: 5px;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+  }
+  .lb-w {
+    font-weight: 700;
+    font-size: 0.95rem;
+    line-height: 1;
+  }
+  .lb-gym {
+    font-size: 0.7rem;
+    line-height: 1;
+    margin-top: 2px;
+  }
+  .lb-priv {
+    position: absolute;
+    top: 2px;
+    right: 5px;
+    color: var(--link);
+    font-size: 1rem;
+    line-height: 1;
+  }
+  .lb-detail {
+    margin: 1rem 0;
+    padding: 0.9rem 1.1rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-subtle);
+  }
+  .lb-detail-head {
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+  }
+  .lb-k {
+    color: var(--text-muted);
+    margin-right: 0.3rem;
+  }
+  .lb-nodata {
+    color: var(--text-muted);
+  }
+  .lb-priv-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.7rem;
+    cursor: pointer;
+  }
+  .lb-priv-hint {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin-top: 0.3rem;
+  }
+  .lb-trend {
+    margin-top: 2rem;
+  }
+  .lb-svg {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+  .lb-poly {
+    stroke: var(--link);
+    stroke-width: 2;
+  }
+  .lb-svg circle {
+    fill: var(--link);
+  }
+  .lb-axis {
+    stroke: var(--border);
+    stroke-width: 1;
+  }
+  .lb-ylab,
+  .lb-xlab {
+    fill: var(--text-muted);
+    font-size: 11px;
+  }
+  .lb-llab {
+    fill: var(--text);
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .lb-backup {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+  .lb-lock {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-right: auto;
+  }
+  @media (max-width: 520px) {
+    .lb-w {
+      font-size: 0.8rem;
+    }
+    .lb-d {
+      font-size: 0.6rem;
+    }
+  }
+</style>

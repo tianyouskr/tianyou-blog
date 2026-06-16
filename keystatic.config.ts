@@ -55,5 +55,26 @@ export default config({
         }),
       },
     }),
+    logs: collection({
+      label: '每日记录 Logs',
+      slugField: 'date',
+      path: 'src/content/logs/*',
+      format: { data: 'yaml' },
+      columns: ['date'],
+      schema: {
+        date: fields.slug({
+          name: {
+            label: '日期 Date',
+            description: '格式 YYYY-MM-DD,例如 2026-06-16(作为文件名)',
+          },
+        }),
+        weight: fields.number({ label: '体重 Weight (kg)' }),
+        workout: fields.text({
+          label: '训练 Workout',
+          description: '今天练了什么,如「胸+三头」「跑步 5km」',
+          multiline: true,
+        }),
+      },
+    }),
   },
 });
