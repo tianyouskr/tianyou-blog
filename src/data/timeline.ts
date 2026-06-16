@@ -44,7 +44,7 @@ export const timeline: Record<Lang, TimelineEntry[]> = {
       logo: '/logos/whu.png',
       logoAlt: '武汉大学',
       bodyHtml:
-        '在 <a href="https://www.whu.edu.cn" target="_blank" rel="noopener">武汉大学</a> 计算机学院人工智能学院攻读本科。',
+        '在 <a href="https://www.whu.edu.cn" target="_blank" rel="noopener">武汉大学</a> 计算机学院人工智能系攻读本科。',
     },
   ],
   en: [
@@ -69,7 +69,7 @@ export const timeline: Record<Lang, TimelineEntry[]> = {
       logo: '/logos/whu.png',
       logoAlt: 'Wuhan University',
       bodyHtml:
-        'B.Eng at the School of Artificial Intelligence (School of Computer Science), <a href="https://www.whu.edu.cn/en" target="_blank" rel="noopener">Wuhan University</a>.',
+        'B.Eng at the Department of Artificial Intelligence, School of Computer Science, <a href="https://www.whu.edu.cn/en" target="_blank" rel="noopener">Wuhan University</a>.',
     },
   ],
 };
